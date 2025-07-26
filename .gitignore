@@ -1,0 +1,29 @@
+# Node.js dependencies
+node_modules/
+dist/
+build/
+.cache/
+.vite/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+venv
+venv.local
+
+# VSCode & IDEs
+.vscode/
+.idea/
+
+# Local server tools
+live-server.log
+
+# Lockfiles
+package-lock.json
