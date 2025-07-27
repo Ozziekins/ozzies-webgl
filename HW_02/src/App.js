@@ -132,9 +132,6 @@ export default class App {
     this.#directional = new DirectionalLight(config.dirColor, config.dirIntensity);
     this.#directional.position.set(9, 7, 5);
     this.#directional.castShadow = true;
-    this.#directional.shadow.mapSize.set(1024, 1024);
-    this.#directional.shadow.radius = 3;
-    this.#directional.shadow.bias = -0.001;
 
     this.#scene.add(this.#directional);
   }
