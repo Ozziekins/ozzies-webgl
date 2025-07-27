@@ -13,9 +13,26 @@ import {
   Group,
 } from 'three';
 
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import Stats from 'stats.js';
+import resources from './resources/index.js';
+import { gsap } from 'gsap';
+
+// CONFIGURATION FOR CHANGING THEMES
+const CONFIG = {
+  light: {
+    background: '#f5f0fa',
+    ambient: 0.6,
+    dirColor: '#ffffff',
+    dirIntensity: 1.5,
+  },
+  dark: {
+    background: '#181a23',
+    ambient: 0.2,
+    dirColor: '#fff1c7',
+    dirIntensity: 1.6,
+  },
+};
 
 export default class App {
   #gl;
@@ -24,98 +41,126 @@ export default class App {
   #stats;
   #controls;
   #clock;
+  #theme = 'light';
+
+  #ambient;
+  #directional;
   #modelGroup;
 
   constructor() {
     this.#clock = new Clock();
     this.#modelGroup = new Group();
-
     this.#init();
   }
 
   async #init() {
-    // RENDERER
+    this.#initRenderer();
+    this.#initScene();
+    this.#initCamera();
+    this.#initStats();
+    this.#initControls();
+    this.#initEvents();
+
+    await resources.load();
+
+    this.#initLights();
+    this.#initGround();
+    this.#initModel();
+
+    this.#animate();
+  }
+
+  // RENDERER INITIALIZATION
+  #initRenderer() {
     this.#gl = new WebGLRenderer({
       canvas: document.querySelector('#canvas'),
       antialias: true,
     });
     this.#gl.setSize(window.innerWidth, window.innerHeight);
-    this.#gl.setPixelRatio(Math.min(window.devicePixelRatio, 1.4)); 
-    this.#gl.shadowMap.enabled = true;
+    this.#gl.setPixelRatio(Math.min(window.devicePixelRatio, 1.4));
     this.#gl.outputColorSpace = SRGBColorSpace;
+    this.#gl.shadowMap.enabled = true;
+  }
 
-    // SCENE
+  // SCENE INITIALIZATION
+  #initScene() {
     this.#scene = new Scene();
-    this.#scene.background = new Color('#f5f0fa'); // soft lavender
+    this.#scene.background = new Color(CONFIG[this.#theme].background);
+    this.#scene.add(this.#modelGroup);
+  }
 
-    // CAMERA
+  // CAMERA INITIALIZATION
+  #initCamera() {
     const aspect = window.innerWidth / window.innerHeight;
-    this.#camera = new PerspectiveCamera(60, aspect, 0.1, 100);
-    this.#camera.position.set(7, 4, 10); // zoomed out a bit
+    this.#camera = new PerspectiveCamera(60, aspect, 1, 70);
+    this.#camera.position.set(7, 4, 10);
     this.#camera.lookAt(0, 1, 0);
+  }
 
-    // STATS
+  // STATS INITIALIZATION
+  #initStats() {
     this.#stats = new Stats();
     document.body.appendChild(this.#stats.dom);
+  }
 
-    // CONTROLS
+  // CONTROLS INITIALIZATION
+  #initControls() {
     this.#controls = new OrbitControls(this.#camera, this.#gl.domElement);
     this.#controls.enableDamping = true;
+  }
 
-    // LIGHTS
-    this.#initLights();
-
-    // GROUND
-    this.#initGround();
-
-    // MODEL
-    await this.#loadModel();
-
-    // EVENTS
+  // EVENT INITIALIZATION
+  #initEvents() {
     window.addEventListener('resize', this.#resize.bind(this));
 
-    // START
-    this.#animate();
+    const themeBtn = document.getElementById('toggle-theme');
+    if (themeBtn) {
+      themeBtn.addEventListener('click', () => {
+        this.#toggleTheme();
+        themeBtn.textContent = this.#theme === 'dark' ? '🌙' : '☀️';
+      });
+    }
   }
 
+  // LIGHTS INITIALIZATION
   #initLights() {
-    const ambient = new AmbientLight(0xffffff, 0.6);
-    this.#scene.add(ambient);
+    const config = CONFIG[this.#theme];
 
-    const directional = new DirectionalLight(0xffffff, 1.5);
-    directional.position.set(6, 8, 4);
-    directional.castShadow = true;
+    this.#ambient = new AmbientLight(0xffffff, config.ambient);
+    this.#scene.add(this.#ambient);
 
-    directional.shadow.mapSize.set(1024, 1024);
-    directional.shadow.radius = 6;
-    directional.shadow.bias = -0.001;
+    this.#directional = new DirectionalLight(config.dirColor, config.dirIntensity);
+    this.#directional.position.set(9, 7, 5);
+    this.#directional.castShadow = true;
+    this.#directional.shadow.mapSize.set(1024, 1024);
+    this.#directional.shadow.radius = 3;
+    this.#directional.shadow.bias = -0.001;
 
-    this.#scene.add(directional);
+    this.#scene.add(this.#directional);
   }
 
+  // GROUND INITIALIZATION - JUST A PLANE WITH STANDARD MESH MATERIAL
   #initGround() {
     const geometry = new PlaneGeometry(20, 20);
     const material = new MeshStandardMaterial({
-      color: '#fff0f5',      // soft pink ground
+      color: '#fff0f5',
       metalness: 0.2,
       roughness: 0.4,
     });
+
     const ground = new Mesh(geometry, material);
-
     ground.rotation.x = -Math.PI / 2;
-    ground.position.y = 0;
     ground.receiveShadow = true;
-
     this.#scene.add(ground);
   }
 
-  async #loadModel() {
-    const loader = new GLTFLoader();
-    const glb = await loader.loadAsync('/lamp.glb');
-
+  // MODEL INITIALIZATION - LOAD THE LAMP GLTF MODEL
+  #initModel() {
+    const glb = resources.get('lamp');
     const model = glb.scene;
-    model.scale.setScalar(0.5);        // smaller scale
-    model.position.y = 0.1;            // slight float
+    model.scale.setScalar(0.3);
+    model.position.y = 0.1;
+
     model.traverse((child) => {
       if (child.isMesh) {
         child.castShadow = true;
@@ -125,23 +170,39 @@ export default class App {
     });
 
     this.#modelGroup.add(model);
-    this.#scene.add(this.#modelGroup);
   }
 
+  // THEME TOGGLE FUNCTIONALITY
+  #toggleTheme() {
+    const next = this.#theme === 'light' ? 'dark' : 'light';
+    const config = CONFIG[next];
+
+    // ANIMATE THE THEME TRANSITION
+    gsap.to(this.#scene.background, new Color(config.background));
+    gsap.to(this.#ambient, { intensity: config.ambient });
+    gsap.to(this.#directional, {
+      intensity: config.dirIntensity,
+      onUpdate: () => {
+        this.#directional.color.set(config.dirColor);
+      },
+    });
+
+    this.#theme = next;
+  }
+
+  // RESIZE HANDLER
   #resize() {
     this.#gl.setSize(window.innerWidth, window.innerHeight);
     this.#camera.aspect = window.innerWidth / window.innerHeight;
     this.#camera.updateProjectionMatrix();
   }
 
+  // ANIMATION LOOP
   #animate = () => {
     this.#stats.begin();
-
     this.#controls.update();
-
-    this.#modelGroup.rotation.y += 0.002;
+    this.#modelGroup.rotation.y += 0.02;
     this.#gl.render(this.#scene, this.#camera);
-
     this.#stats.end();
     requestAnimationFrame(this.#animate);
   };

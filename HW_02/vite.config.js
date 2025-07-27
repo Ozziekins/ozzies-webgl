@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite';
+// import { defineConfig } from 'vite';
 
-export default defineConfig({
-  base: '/ozzies-webgl/HW_02/',
-});
+// export default defineConfig({
+//   base: '/ozzies-webgl/HW_02/',
+// });

@@ -1,42 +1,21 @@
-# Three.js Homework 02/04
+# Homework 02/04 - Three.js Lamp Scene
 
-## 💡 Description
+A pastel-themed scene with a `.glb` lamp model, ambient and directional lighting, soft shadows, and orbit controls. Includes a toggle button for switching between light and dark modes.
 
-This is a basic Three.js scene for Homework 02/04 of the WebGL course with Robert Borghesi. It includes:
-
-* A loaded `.glb` model (`lamp.glb.glb`)
-* Proper lighting setup with ambient + directional light
-* Optimized shadows using `castShadow` / `receiveShadow`
-* OrbitControls, requestAnimationFrame loop, resize handling
-* A pastel background and aesthetic layout
-
-## 🗂 Structure
-
-```
-/public/lamp.glb.glb
-/src/App.js
-/src/main.js
-index.html
-```
-
-## 🚀 How to Run
-
-Make sure you have [Node.js](https://nodejs.org/) installed.
+## How to Run
 
 ```bash
+cd HW02
 npm install
-live-server
+npm run dev
 ```
 
-Or just open `index.html` with a local server if you prefer.
+## Features
 
-## 📸 Screenshot
-
-> (Include a screenshot of your rendered scene here)
-
-## 🛆 Tech
-
-* [three.js](https://threejs.org/)
-* [stats.js](https://github.com/mrdoob/stats.js/)
-* [GLTFLoader](https://threejs.org/docs/#examples/en/loaders/GLTFLoader)
-* [OrbitControls](https://threejs.org/docs/#examples/en/controls/OrbitControls)
+* GLTF model loading
+* Soft shadows
+* Light/dark mode toggle with icon switch
+* Pastel background & lighting
+* Camera controls
+* Stats.js panel
+* Resize + RAF + clamped DPR
