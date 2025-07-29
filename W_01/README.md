@@ -1,6 +1,6 @@
 # 🌲 Three.js Weekly 01/02 - Forest Scene
 
-A stylized interactive Three.js scene featuring a low-poly fox circling around a snowy chalet inside a forest. Includes shadows, camera orbit controls, animated elements, theme toggle (🌞/🌙), post-processing effects, and GUI parameters.
+A stylized interactive Three.js scene featuring a low-poly fox moving in front of a snowy chalet inside a forest. Includes shadows, camera orbit controls, animated elements, theme toggle (🌞/🌙), post-processing effects, and mouse movement effects.
 
 ---
 
@@ -10,12 +10,6 @@ A stylized interactive Three.js scene featuring a low-poly fox circling around a
 * 🏡 Chalet with subtle animated chimney smoke
 * 🌳 Forest environment from low-poly glTF assets
 * 🔦 Ambient + Directional lights (shadows enabled)
-* 🎛 lil-gui panel for tweaking:
-
-  * Theme (light/dark)
-  * Light intensity
-  * Shadow toggle
-  * Helpers visibility
 * ✨ Post-processing effects: Vignette, Sepia, Chromatic Aberration
 * 🧠 Clamped DPR for performance optimization
 * 🎥 Camera orbit control with damping
@@ -31,6 +25,7 @@ HW01/
 │   ├── fox.glb
 │   ├── chalet.glb
 │   ├── forest.glb
+│   └── envmap_d.hdr
 │   └── envmap.hdr
 ├── src/
 │   ├── App.js
