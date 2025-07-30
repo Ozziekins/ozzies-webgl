@@ -7,6 +7,7 @@ import {
 
 export default class Postprocessing {
   #composer;
+  vignette;
 
   constructor({ gl, scene, camera }) {
     this.#composer = new EffectComposer(gl);
@@ -14,13 +15,13 @@ export default class Postprocessing {
     const renderPass = new RenderPass(scene, camera);
     this.#composer.addPass(renderPass);
 
-    const vignette = new VignetteEffect({
+    this.vignette = new VignetteEffect({
       eskil: false,
       offset: 0.4,
       darkness: 0.7,
     });
 
-    const effectPass = new EffectPass(camera, vignette);
+    const effectPass = new EffectPass(camera, this.vignette);
     this.#composer.addPass(effectPass);
   }
 
@@ -31,6 +32,4 @@ export default class Postprocessing {
   resize(w, h) {
     this.#composer.setSize(w, h);
   }
-
-  onMouseMove() {} 
 }

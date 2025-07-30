@@ -3,9 +3,10 @@ import {
   WebGLRenderer,
   Scene,
   PerspectiveCamera,
-  Color,
+  CameraHelper,
   AmbientLight,
   DirectionalLight,
+  PCFSoftShadowMap,
   SpotLight,
   SpotLightHelper,
   Group,
@@ -25,7 +26,7 @@ const CONFIG = {
     ambient: 0.6,
     directional: {
       color: 0xffffff,
-      intensity: 0.2,
+      intensity: 1,
     },
   },
   dark: {
@@ -33,7 +34,7 @@ const CONFIG = {
     ambient: 0.2,
     directional: {
       color: 0xfff1c7,
-      intensity: 0.6,
+      intensity: 1,
     },
   },
 };
@@ -45,6 +46,7 @@ export default class App {
   #controls;
   #stats;
   #clock = new Clock();
+  #worldGroup = new Group();
   #foxGroup = new Group();
   #mouse = new Vector2();
   #composer;
@@ -84,6 +86,7 @@ export default class App {
     this.#renderer.setSize(window.innerWidth, window.innerHeight);
     this.#renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.6));
     this.#renderer.shadowMap.enabled = true;
+    this.#renderer.shadowMap.type = PCFSoftShadowMap;
   }
 
   #setupCamera() {
@@ -109,18 +112,29 @@ export default class App {
     this.#ambient = new AmbientLight(0xffffff, 0.6);
     this.#scene.add(this.#ambient);
 
-    this.#directional = new DirectionalLight(0xffffff, 1.5);
-    this.#directional.position.set(6, 10, 5);
+    this.#directional = new DirectionalLight(0xffffff, 1);
+    this.#directional.position.set(0, 50, 0);
+    this.#directional.target.position.set(0, 0, 0); 
     this.#directional.castShadow = true;
-    this.#directional.shadow.mapSize.set(1024, 1024);
+    this.#directional.shadow.mapSize.set(512, 512);
+    this.#directional.shadow.camera.near = 1;
+    this.#directional.shadow.camera.far = 50;
+    this.#directional.shadow.camera.left = -50;
+    this.#directional.shadow.camera.right = 50;
+    this.#directional.shadow.camera.top = 100;
+    this.#directional.shadow.camera.bottom = -10;
     this.#scene.add(this.#directional);
+
+    const dirShadowHelper = new CameraHelper(this.#directional.shadow.camera);
+    this.#scene.add(dirShadowHelper);
 
     this.#spotlight = new SpotLight(0xccccff, 550, 150, Math.PI / 8, 0.5, 1);
     this.#spotlightHelper = new SpotLightHelper(this.#spotlight);
     this.#scene.add(this.#spotlightHelper);
     this.#spotlight.castShadow = true;
     this.#spotlight.position.set(20, 120, -2); 
-    // this.#spotlight.shadow.bias = -0.0005;
+    this.#spotlight.shadow.mapSize.set(256, 256);
+    this.#spotlight.shadow.bias = -0.0005;
     this.#scene.add(this.#spotlight);
     this.#scene.add(this.#spotlight.target);
 
@@ -157,26 +171,26 @@ export default class App {
     if (forest) {
       forest.scale.setScalar(0.5);
       forest.position.set(0, 0, 0);
-      forest.traverse(obj => obj.castShadow = obj.receiveShadow = true);
-      this.#scene.add(forest);
+      forest.traverse(obj => obj.receiveShadow = true);
+      this.#worldGroup.add(forest);
+      // this.#scene.add(forest);
     }
 
     const chalet = resources.get('chalet')?.scene;
     if (chalet) {
       chalet.position.set(2, 2, -2);
-      chalet.traverse(obj => {
-        obj.castShadow = obj.receiveShadow = true;
-      });
-      this.#scene.add(chalet);
+      this.#worldGroup.add(chalet);
+      // this.#scene.add(chalet);
     }
 
     const fox = resources.get('fox')?.scene;
     if (fox) {
       fox.scale.setScalar(4);
       fox.position.set(12, 10, -2);
-      fox.traverse(obj => obj.castShadow = obj.receiveShadow = true);
+      fox.traverse(obj => obj.castShadow = true);
       this.#foxGroup.add(fox);
-      this.#scene.add(this.#foxGroup);
+      this.#worldGroup.add(this.#foxGroup);
+      // this.#scene.add(this.#foxGroup);
     }
 
     // // Envmap
@@ -190,6 +204,8 @@ export default class App {
     //     }
     //   });
     // }
+    
+    this.#scene.add(this.#worldGroup);
   }
 
   #animate = () => {
@@ -197,6 +213,8 @@ export default class App {
 
     const elapsed = this.#clock.getElapsedTime();
     this.#controls.update();
+
+    this.#worldGroup.position.y = Math.sin(elapsed * 1.1) * 2.5;
 
     this.#foxGroup.position.z = Math.sin(elapsed) * 15;
     this.#foxGroup.position.y = Math.sin(elapsed * 2) * 0.2 + 1;
@@ -228,6 +246,15 @@ export default class App {
     const offsetX = this.#mouse.x * 10;
     const offsetY = this.#mouse.y * 5;
     this.#directional.position.set(6 + offsetX, 10 + offsetY, 5);
+
+    const distToCenter = Math.sqrt(this.#mouse.x ** 2 + this.#mouse.y ** 2);
+    const darkness = 0.3 + Math.min(0.7, distToCenter * 1.2);
+
+    gsap.to(this.#composer.vignette, {
+      darkness,
+      duration: 0.3,
+      ease: "power2.out",
+    });
   }
 
   setTheme(theme) {
