@@ -51,8 +51,10 @@ export default class PlanesManager extends Group {
       });
       const mesh = new Mesh(GEO, mat);
 
-      mesh.position.x = MathUtils.randFloat(-halfW, halfW);
-      mesh.position.y = MathUtils.randFloat(-halfH, halfH);
+      const spreadFactor = 0.6;  
+      
+      mesh.position.x = MathUtils.randFloat(-halfW * spreadFactor, halfW * spreadFactor);
+      mesh.position.y = MathUtils.randFloat(-halfH * spreadFactor, halfH * spreadFactor);
       mesh.position.z = i * this.#SPACING;
 
       this.add(mesh);
