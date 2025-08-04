@@ -21,6 +21,7 @@ venv.local
 # VSCode & IDEs
 .vscode/
 .idea/
+.cursor/
 
 # Local server tools
 live-server.log

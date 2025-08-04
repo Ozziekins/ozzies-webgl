@@ -1,11 +1,14 @@
-// src/shaders/index.frag
-
 precision highp float;
 
-varying float vDist;
-uniform vec3 uColorA;
-uniform vec3 uColorB;
+varying float vWave;
+uniform vec3 uColor1;
+uniform vec3 uColor2;
+uniform vec3 uHoverColor;
+uniform float uHoverState;
 
 void main() {
-  gl_FragColor = vec4(mix(uColorA, uColorB, vDist), 1.0);
+  float t = (vWave + 1.0) * 0.5;
+  vec3 baseCol = mix(uColor1, uColor2, t);
+  vec3 finalCol = mix(baseCol, uHoverColor, uHoverState);
+  gl_FragColor = vec4(finalCol, 1.0);
 }

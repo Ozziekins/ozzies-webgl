@@ -3,142 +3,145 @@ import {
   Scene,
   PerspectiveCamera,
   Clock,
-  PlaneGeometry,
-  BufferAttribute,
-  Mesh,
+  Vector3,
   Color,
   Raycaster,
   Vector2,
-  Vector3,
 } from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import Stats from 'stats.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-import GUIManager  from './gui/index.js';
-import ShaderPlane from './plane/index.js';
-
-// load raw GLSL
-import vertexSrc   from './shaders/index.vert?raw';
-import fragmentSrc from './shaders/index.frag?raw';
-
-const V2 = new Vector2();
-const V3 = new Vector3();
-const COLOR = new Color();
+import Plane from './plane/index.js';
+import GUIManager from './gui/index.js';
 
 export default class App {
   #gl;
-  #camera;
   #scene;
+  #camera;
   #clock;
   #stats;
-  #plane;
+  #planes;
+  #gui;
   #raycaster;
   #mouse;
-  #uniforms;
-  #gui;
 
   constructor() {
     this.#clock = new Clock();
     this.#raycaster = new Raycaster();
-    this.#mouse     = V2.clone();
+    this.#mouse = new Vector2();
     this.#init();
   }
 
   async #init() {
-    // RENDERER
-    this.#gl = new WebGLRenderer({
-      canvas: document.querySelector('#canvas'),
-      antialias: true,
-    });
-    this.#gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.#gl = new WebGLRenderer({ canvas: document.querySelector('#canvas'), antialias: true });
     this.#gl.setSize(window.innerWidth, window.innerHeight);
-    this.#gl.setClearColor(0x000000, 1);
+    this.#gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    // CAMERA
     const aspect = window.innerWidth / window.innerHeight;
-    this.#camera = new PerspectiveCamera(60, aspect, 0.1, 50);
-    this.#camera.position.set(0, 0, 8);
+    this.#camera = new PerspectiveCamera(60, aspect, 0.1, 100);
+    this.#camera.position.z = 10;
 
-    // STATS
+    this.#scene = new Scene();
     this.#stats = new Stats();
     document.body.appendChild(this.#stats.dom);
 
-    // CONTROLS
-    new OrbitControls(this.#camera, this.#gl.domElement);
+    const controls = new OrbitControls(this.#camera, this.#gl.domElement);
 
-    // SCENE
-    this.#scene = new Scene();
-
-    // LOAD
-    this.#load();
-  }
-
-  async #load() {
-    this.#initUniforms();
     this.#initScene();
-    this.#initGUI();
     this.#initEvents();
     this.#animate();
   }
 
-  #initUniforms() {
-    this.#uniforms = {
-      uTime:   { value: 0.0 },
-      uMouse:  { value: V3.clone() },
-      uColorA: { value: COLOR.clone().set(0x111111) },
-      uColorB: { value: COLOR.clone().set(0x00ffff) },
-    };
-  }
-
   #initScene() {
-    // build plane with noise attribute
-    const geo = new PlaneGeometry(4, 4, 64, 64);
-    const count = geo.attributes.position.count;
-    const rand = new Float32Array(count);
-    for (let i = 0; i < count; i++) rand[i] = Math.random();
-    geo.setAttribute('aRandom', new BufferAttribute(rand, 1));
+    const radius = 8;
+    const latitudeSegments = 12;
+    const longitudeSegments = 24;
+    this.#planes = [];
 
-    // mesh
-    this.#plane = new ShaderPlane(this.#uniforms);
-    this.#scene.add(this.#plane);
-  }
+    this.#gui = new GUIManager();
 
-  #initGUI() {
-    this.#gui = new GUIManager(this.#uniforms);
+    // CALCULATION FOR SPHERICAL PLANE DISTRIBUTION
+    for (let lat = 0; lat <= latitudeSegments; lat++) {
+      const phi = (lat / latitudeSegments) * Math.PI;
+      
+      for (let lon = 0; lon < longitudeSegments; lon++) {
+        const theta = (lon / longitudeSegments) * 2 * Math.PI;
+        
+        const x = radius * Math.sin(phi) * Math.cos(theta);
+        const y = radius * Math.cos(phi);
+        const z = radius * Math.sin(phi) * Math.sin(theta);
+        
+        const position = new Vector3(x, y, z);
+        const plane = new Plane(this.#gui.uniforms, position);
+        
+        const lookAtVector = new Vector3(0, 0, 0);
+        plane.mesh.lookAt(lookAtVector);
+        
+        this.#scene.add(plane.mesh);
+        this.#planes.push(plane);
+      }
+    }
   }
 
   #initEvents() {
-    window.addEventListener('resize', this.#onResize.bind(this));
-    window.addEventListener('mousemove', this.#onMouseMove.bind(this));
+    window.addEventListener('resize', () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      this.#gl.setSize(width, height);
+      this.#camera.aspect = width / height;
+      this.#camera.updateProjectionMatrix();
+    });
+
+    // MOUSE MOVE EVENT TO CHECK HOVER STATE
+    window.addEventListener('mousemove', (event) => {
+      this.#mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      this.#mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      this.#checkHover();
+    });
+
+    window.addEventListener('mouseleave', () => {
+      this.#clearAllHover();
+    });
   }
 
-  #onMouseMove(e) {
-    this.#mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-    this.#mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  #checkHover() {
+    // RAY PICKING TO DETECT HOVER
+    this.#raycaster.setFromCamera(this.#mouse, this.#camera);
+
+    const intersects = this.#raycaster.intersectObjects(
+      this.#planes.map(plane => plane.mesh)
+    );
+
+    this.#clearAllHover();
+
+    // SET HOVER STATE
+    if (intersects.length > 0) {
+      const intersectedMesh = intersects[0].object;
+      const plane = this.#planes.find(p => p.mesh === intersectedMesh);
+      if (plane) {
+        plane.setHoverState(true);
+      }
+    }
   }
 
-  #onResize() {
-    this.#gl.setSize(window.innerWidth, window.innerHeight);
-    this.#camera.aspect = window.innerWidth / window.innerHeight;
-    this.#camera.updateProjectionMatrix();
+  #clearAllHover() {
+    for (const plane of this.#planes) {
+      plane.setHoverState(false);
+    }
   }
 
   #animate() {
     this.#stats.begin();
 
     const t = this.#clock.getElapsedTime();
-    this.#plane.material.uniforms.uTime.value = t;
+    this.#gui.uniforms.uTime.value = t;
 
-    // raycast to update uMouse in world space
-    this.#raycaster.setFromCamera(this.#mouse, this.#camera);
-    const hits = this.#raycaster.intersectObject(this.#plane);
-    if (hits.length) {
-      this.#plane.material.uniforms.uMouse.value.copy(hits[0].point);
+    for (const plane of this.#planes) {
+      plane.update(t);
     }
 
     this.#gl.render(this.#scene, this.#camera);
     this.#stats.end();
-
     requestAnimationFrame(this.#animate.bind(this));
   }
 }
