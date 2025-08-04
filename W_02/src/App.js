@@ -39,7 +39,7 @@ export default class App {
 
     const aspect = window.innerWidth / window.innerHeight;
     this.#camera = new PerspectiveCamera(60, aspect, 0.1, 100);
-    this.#camera.position.z = 10;
+    this.#camera.position.z = 15;
 
     this.#scene = new Scene();
     this.#stats = new Stats();
