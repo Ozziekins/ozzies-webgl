@@ -80,6 +80,18 @@ export default class Dungeon extends Group {
     const directionalLight = new THREE.DirectionalLight(0xffffff, 2.2);
     directionalLight.position.set(8, 10, 8);
     directionalLight.castShadow = true;
+    
+    // Optimized shadow settings
+    directionalLight.shadow.mapSize.width = 1024;
+    directionalLight.shadow.mapSize.height = 1024;
+    directionalLight.shadow.camera.near = 0.5;
+    directionalLight.shadow.camera.far = 50;
+    directionalLight.shadow.camera.left = -10;
+    directionalLight.shadow.camera.right = 10;
+    directionalLight.shadow.camera.top = 10;
+    directionalLight.shadow.camera.bottom = -10;
+    directionalLight.shadow.bias = -0.0001;
+    
     this.scene.add(directionalLight);
 
     this.createEveningBackground();
@@ -207,23 +219,25 @@ export default class Dungeon extends Group {
       gltf.scene.position.x += 14;
       gltf.scene.position.y -= 4;
       
-      // References to bats and water for animation
+      // Reference bats and water for animation
       this.bats = [];
       this.waterObjects = [];
       
       gltf.scene.traverse((child) => {
         if (child.isMesh) {
+          child.castShadow = true;
+          
           if (child.name.includes('Bat_1') || child.name.includes('Bat_1001')) {
             this.bats.push(child);
             // Store initial position for animation
             child.userData.initialY = child.position.y;
           }
           
-          // Find water objects - NOT WORKING
+          // Find water objects 
           if (child.name.toLowerCase().includes('water') ||
               child.material && child.material.name.toLowerCase().includes('water')) {
             this.waterObjects.push(child);
-            // Store original material for glow effect
+            // Store original material for glow effect- NOT WORKING
             child.userData.originalMaterial = child.material.clone();
           }
         }
@@ -336,13 +350,13 @@ export default class Dungeon extends Group {
     
     const floorMaterial = new THREE.MeshBasicMaterial({
       map: floorTexture,
-      transparent: true,
-      side: THREE.DoubleSide
+      transparent: true
     });
 
     this.floor = new THREE.Mesh(floorGeometry, floorMaterial);
     this.floor.rotation.x = -Math.PI / 2;
     this.floor.position.y = -21;
+    this.floor.receiveShadow = true; // Floor should receive shadows
     this.scene.add(this.floor);
   }
 
@@ -351,12 +365,12 @@ export default class Dungeon extends Group {
     const renderPass = new RenderPass(scene, camera);
     this.composer.addPass(renderPass);
 
-    // Bloom effect for mystical atmosphere
+    // Bloom effect
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      0.03,  // intensity (lower for dungeon)
-      0.03,  // radius
-      0.09   // threshold (higher for darker scene)
+      0.03,
+      0.03,
+      0.09
     );
     this.composer.addPass(bloomPass);
 
@@ -368,7 +382,7 @@ export default class Dungeon extends Group {
     });
     this.composer.addPass(gradientPass);
 
-    // Mmouse move
+    // Mouse move
     this.renderer.domElement.addEventListener('mousemove', (event) => {
       this.mousePos.x = event.clientX / window.innerWidth;
       this.mousePos.y = 1.0 - (event.clientY / window.innerHeight);

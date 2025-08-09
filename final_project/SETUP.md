@@ -8,7 +8,7 @@
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/Ozziekins/ozzies-webgl/blob/final_project
    cd final_project
    ```
 
@@ -24,56 +24,6 @@
 
 4. **Open in browser**
    Navigate to `http://localhost:5173` (or the port shown in terminal)
-
-## Project Structure
-
-```
-final_project/
-├── src/
-│   ├── pages/
-│   │   ├── landing.js          # Landing page with 3D text and mouse parallax
-│   │   ├── sceneSelector.js    # Interactive model selector
-│   │   ├── bedroom.js          # Bedroom scene with plant animations
-│   │   └── dungeon.js          # Dungeon scene with bat and water animations
-│   ├── shaders/
-│   │   ├── bedroom.vert.js     # Bedroom vertex shader
-│   │   ├── bedroom.frag.js     # Bedroom fragment shader
-│   │   ├── bedroomGradient.vert.js # Bedroom gradient vertex shader
-│   │   ├── bedroomGradient.frag.js # Bedroom gradient fragment shader
-│   │   ├── dungeon.vert.js     # Dungeon vertex shader
-│   │   ├── dungeon.frag.js     # Dungeon fragment shader
-│   │   ├── dungeonGradient.vert.js # Dungeon gradient vertex shader
-│   │   ├── dungeonGradient.frag.js # Dungeon gradient fragment shader
-│   │   ├── index.vert.js       # Generic vertex shader
-│   │   └── index.frag.js       # Generic fragment shader
-│   ├── gui/
-│   │   └── index.js            # Centralized GUI system
-│   ├── postprocessing/
-│   │   ├── index.js            # Generic post-processing composer
-│   │   └── sceneSelectorEffects.js # Hover effects and particle system
-│   ├── App.js                  # Main application with routing and FPS monitoring
-│   ├── router.js               # Hash-based routing
-│   └── main.js                 # Entry point
-├── assets/
-│   ├── models/
-│   │   ├── bedroom.glb         # Optimized bedroom model
-│   │   ├── dagger.glb          # Optimized dagger model
-│   │   └── ...                 # Additional models
-│   ├── env/
-│   │   ├── envmap.hdr          # HDRI environment map
-│   │   └── envmap_d.hdr        # Alternative HDRI
-│   ├── textures/
-│   │   └── base.png            # Compressed textures
-│   └── fonts/
-│       └── helvetiker_regular.typeface.json # Font for 3D text
-├── public/
-│   ├── envmap.hdr              # Public HDRI files
-│   └── envmap_d.hdr
-├── package.json
-├── vite.config.js
-├── README.md                   # Project documentation
-└── SETUP.md                    # This file
-```
 
 ## Available Scripts
 
@@ -93,7 +43,7 @@ final_project/
 - **stats.js** - FPS monitoring
 - **UnrealBloomPass** - Bloom post-processing effect
 
-## New Features
+## Features
 
 ### GUI System
 - **Real-time Controls**: Adjust animations, lighting, and effects
@@ -119,7 +69,8 @@ final_project/
 ## Performance Notes
 
 - **Target FPS**: 60fps on mobile devices
-- **Model Optimization**: All models compressed and optimized
-- **Texture Compression**: All textures compressed using TinyPNG
+- **Model Optimization**: All models were already small so i did not compress
 - **Memory Management**: Proper cleanup in dispose() methods
 - **FPS Monitoring**: Real-time performance tracking
+- **DPR Optimization**: Clamped to 1.6 maximum for performance
+- **Smart Antialiasing**: Only enabled when DPR ≤ 1

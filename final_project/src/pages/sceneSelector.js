@@ -54,7 +54,7 @@ export default class SceneSelector {
     });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
-    floor.position.y = -0.5;
+    floor.position.y = -1; 
     floor.receiveShadow = true;
     this.scene.add(floor);
 
@@ -62,18 +62,24 @@ export default class SceneSelector {
     const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
     this.scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(5, 5, 5);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    directionalLight.position.set(8, 10, 8);
     directionalLight.castShadow = true;
-    directionalLight.shadow.mapSize.width = 2048;
-    directionalLight.shadow.mapSize.height = 2048;
-    directionalLight.shadow.camera.near = 0.5;
-    directionalLight.shadow.camera.far = 50;
-    directionalLight.shadow.camera.left = -10;
-    directionalLight.shadow.camera.right = 10;
-    directionalLight.shadow.camera.top = 10;
-    directionalLight.shadow.camera.bottom = -10;
+    
+    // Optimized shadow settings 
+    directionalLight.shadow.mapSize.width = 1024;
+    directionalLight.shadow.mapSize.height = 1024;
+    directionalLight.shadow.camera.near = 0.1;
+    directionalLight.shadow.camera.far = 100;
+    directionalLight.shadow.camera.left = -15;
+    directionalLight.shadow.camera.right = 15;
+    directionalLight.shadow.camera.top = 15;
+    directionalLight.shadow.camera.bottom = -15;
+    directionalLight.shadow.bias = -0.0001;
+    
     this.scene.add(directionalLight);
+
+    directionalLight.shadow.needsUpdate = true;
 
     // Load GLTF models
     const gltfLoader = new GLTFLoader();
@@ -98,7 +104,7 @@ export default class SceneSelector {
       bedroomMesh.traverse((child) => {
         if (child.isMesh) {
           child.castShadow = true;
-          child.receiveShadow = true;
+          child.receiveShadow = false;
           if (child.material) {
             child.material.transparent = false;
             child.material.opacity = 1;
@@ -134,7 +140,7 @@ export default class SceneSelector {
       daggerMesh.traverse((child) => {
         if (child.isMesh) {
           child.castShadow = true;
-          child.receiveShadow = true;
+          child.receiveShadow = false;
           if (child.material) {
             child.material.transparent = false;
             child.material.opacity = 1;
@@ -158,9 +164,9 @@ export default class SceneSelector {
     try {
       const bedDoorway = await gltfLoader.loadAsync('/src/assets/models/bed_doorway.glb');
       bedDoorwayMesh = bedDoorway.scene;
-      bedDoorwayMesh.position.set(-1.1, -0.75, -0.5); // Closer to bed
-      bedDoorwayMesh.rotation.set(0, 0, 0); // Stand upright
-      bedDoorwayMesh.scale.set(3, 3, 3); // Much bigger scale
+      bedDoorwayMesh.position.set(-1.1, -0.75, -0.5);
+      bedDoorwayMesh.rotation.set(0, 0, 0);
+      bedDoorwayMesh.scale.set(3, 3, 3);
       bedDoorwayMesh.name = 'bedroom';
       bedDoorwayMesh.userData = {
         originalY: bedDoorwayMesh.position.y,
@@ -169,8 +175,9 @@ export default class SceneSelector {
       };
       bedDoorwayMesh.traverse((child) => {
         if (child.isMesh) {
+          // Only cast shadows, don't receive
           child.castShadow = true;
-          child.receiveShadow = true;
+          child.receiveShadow = false;
           if (child.material) {
             child.material.transparent = false;
             child.material.opacity = 1;
@@ -194,9 +201,9 @@ export default class SceneSelector {
     try {
       const daggerDoorway = await gltfLoader.loadAsync('/src/assets/models/dagger_doorway.glb');
       daggerDoorwayMesh = daggerDoorway.scene;
-      daggerDoorwayMesh.position.set(3, -1, -0.5); // Closer to dagger
-      daggerDoorwayMesh.rotation.set(0, Math.PI/2, 0); // Stand upright
-      daggerDoorwayMesh.scale.set(1.5, 1.5, 1.5); // Much bigger scale
+      daggerDoorwayMesh.position.set(3, -1, -0.5);
+      daggerDoorwayMesh.rotation.set(0, Math.PI/2, 0);
+      daggerDoorwayMesh.scale.set(1.5, 1.5, 1.5);
       daggerDoorwayMesh.name = 'dungeon';
       daggerDoorwayMesh.userData = {
         originalY: daggerDoorwayMesh.position.y,
@@ -205,8 +212,9 @@ export default class SceneSelector {
       };
       daggerDoorwayMesh.traverse((child) => {
         if (child.isMesh) {
+          // Only cast shadows, don't receive
           child.castShadow = true;
-          child.receiveShadow = true;
+          child.receiveShadow = false;
           if (child.material) {
             child.material.transparent = false;
             child.material.opacity = 1;
@@ -241,8 +249,12 @@ export default class SceneSelector {
     this.renderer.domElement.addEventListener('click', this._handleClick.bind(this));
     this.renderer.domElement.addEventListener('mousemove', this._handleMouseMove.bind(this));
 
-    // Create particles
     this.particleSystem.createParticles(this.scene);
+    
+    const light = this.scene.children.find(child => child instanceof THREE.DirectionalLight);
+    if (light) {
+      light.shadow.needsUpdate = true;
+    }
   }
 
   update() {

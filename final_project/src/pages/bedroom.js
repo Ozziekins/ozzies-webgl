@@ -80,6 +80,18 @@ export default class Bedroom extends Group {
     const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0);
     directionalLight.position.set(8, 10, 8);
     directionalLight.castShadow = true;
+    
+    // Optimized shadow settings
+    directionalLight.shadow.mapSize.width = 1024;
+    directionalLight.shadow.mapSize.height = 1024;
+    directionalLight.shadow.camera.near = 0.5;
+    directionalLight.shadow.camera.far = 50;
+    directionalLight.shadow.camera.left = -10;
+    directionalLight.shadow.camera.right = 10;
+    directionalLight.shadow.camera.top = 10;
+    directionalLight.shadow.camera.bottom = -10;
+    directionalLight.shadow.bias = -0.0001;
+    
     this.scene.add(directionalLight);
 
     this.createMagicalBackground();
@@ -205,9 +217,11 @@ export default class Bedroom extends Group {
       gltf.scene.rotation.y = - Math.PI / 1.375;
       gltf.scene.position.x += 2;
       
-      // Find plant objects for animation
+      // Find plant objects for animation 
       gltf.scene.traverse((child) => {
         if (child.isMesh) {
+          child.castShadow = true;
+          
           if (child.name === 'Object_30' || child.name === 'Object_6') {
             this.plantObjects.push(child);
             // Store initial position for animation
@@ -324,13 +338,13 @@ export default class Bedroom extends Group {
     
     const floorMaterial = new THREE.MeshBasicMaterial({
       map: floorTexture,
-      transparent: true,
-      side: THREE.DoubleSide
+      transparent: true
     });
 
     this.floor = new THREE.Mesh(floorGeometry, floorMaterial);
     this.floor.rotation.x = -Math.PI / 2; 
     this.floor.position.y = -6;
+    this.floor.receiveShadow = true; // Floor should receive shadows
     this.scene.add(this.floor);
   }
 
@@ -339,12 +353,12 @@ export default class Bedroom extends Group {
     const renderPass = new RenderPass(scene, camera);
     this.composer.addPass(renderPass);
 
-    // Bloom effect for magical atmosphere
+    // Bloom effect
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      0.05,  // intensity
-      0.04,  // radius
-      0.085  // threshold
+      0.05, 
+      0.04, 
+      0.085
     );
     this.composer.addPass(bloomPass);
 
@@ -392,7 +406,7 @@ export default class Bedroom extends Group {
       this.cloudField.geometry.attributes.position.needsUpdate = true;
     }
     
-        // Animate plant with gentle side-to-side swaying
+        // Animate plant a little bit
     if (this.plantObjects) {
       this.plantObjects.forEach((plant, index) => {
         if (plant.userData.initialY !== undefined) {
